@@ -1,0 +1,25 @@
+modules
+>>>
+
+path
+>>>
+
+
+
+fs
+>>>
+
+userstring
+>>>
+
+handleRequest - takes request and response object as its parameters.
+switch statement by method.
+currently hard coding every GET request to return index.html.
+GOING FORWARD: route depending on request type
+
+if request method is get
+determine pathname by url
+read corresponding file
+write headers
+write file into response
+end your response
