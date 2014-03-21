@@ -8,64 +8,60 @@ var http = require('http-request');
 
 exports.handleRequest = function (req, res) {
   console.log("in handle request");
-  console.log("this is req.url: " + req.url);
-  console.log("this is req.method: " + req.method);
+  console.log("this is req.url: " + req.url + "this is req.method: " + req.method);
+  // archive.readListOfUrls();
   //res.write(archive.paths.siteAssets);
   // helper.serveAssets(res, pathname)
   switch(req.method){
     case 'GET':
-      var pathname = archive.paths.siteAssets+"/index.html";
-      // console.log( "path name is " + pathname );
-      fs.readFile(pathname, function(err, file){
-        // console.log("in readfile callback");
-        // console.log(" file is" + file);
-        res.writeHeader(200);
-        res.write(file);
-        res.end()
-      });
+      var url = querystring.parse(req.content).url;
+      console.log('url =', url);
+      if(req.url === '/'){
+        helper.redirect('index.html', archive.paths.siteAssets, 200, res);
+      } else {
+        archive.isUrlArchived(url, function(status){
+          if(status){
+            helper.redirect(url, archive.path.archivedSites, 200, res);
+          } else {
+            helper.send404(res);
+          }
+        });
+      }
       break;
 
     case 'POST':
+      // initialize data variable to empty string
       req.content = '';
+      // chunk it until it done
       req.on('data', function(chunk){
         req.content += chunk;
       });
+      // once data is recieved
       req.on('end', function(){
-        // parsedData.url is the form entry
-        var parsedData = querystring.parse(req.content);
-        console.log("archive.paths.list",archive.paths.list);
-        // fs.write(archive.paths.list, parsedData.url, function(err, written, buffer){
-        // WRITE TO SITES.TXT
-        fs.open("/Users/HR10/Code/FaridSiddiqi/2014-02-web-historian/archives/sites.txt", "a+", 666, function(err,fd){
-          if( err){
-            console.log('file could not be opened');
-          }else{
-            console.log('file opened successfully');
-            console.log('fd = ',typeof fd);
-            fs.write(fd, parsedData.url + '\n',null, 'utf8', function(err, written, buffer){
-              if(err){
-                console.log('could not write');
-              }else{
-                console.log('write is successful');
-                fs.close(fd, function(){
-                  console.log('file closed');
-                });
+        // console.log('req.content = ', req.content);
+        var url = querystring.parse(req.content).url;
+        console.log( "before isUrlInList");
+        console.log( "url = ", url);
+
+        archive.isUrlInList(url, function(isInList){
+          console.log( "isInList = ", isInList);
+          if( isInList === true){
+            // check to see if it's already archived
+            archive.isUrlArchived(url, function(isArchived){
+              console.log("isArchived = ", isArchived);
+              if(isArchived){
+                helper.redirect(url, archive.paths.archivedSites, 200, res);
+              } else {
+                // in list, but not archived
+                // redirect to loading page
+                helper.redirect('loading.html', archive.paths.siteAssets, 200, res);
               }
             });
+          } else {
+            // add it to list
+            archive.addUrlToList(url);
+            helper.redirect('loading.html', archive.paths.siteAssets, 302, res);
           }
-        });
-        // SCRAPE SITE
-        http.get({
-          url: parsedData.url,
-          progress: function(current,total){
-            console.log('downloaded %d bytes from %d', current, total);
-          }
-        }, archive.paths['archivedSites']+"/"+parsedData.url, function(err, res){
-          if( err){
-            console.log('err in scraper');
-            return;
-          }
-          console.log(res.code, res.header, res.file);
         });
       });
       break;

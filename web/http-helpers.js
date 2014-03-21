@@ -16,4 +16,27 @@ exports.serveAssets = function(res, asset) {
 
 };
 
+exports.send404 = function(resp){
+  resp.writeHead(404, exports.headers);
+  resp.end('404 - site not found');
+};
+
+exports.redirect = function(url, folder, statusCode, resp){
+  // res.redirect(archive.paths.siteAssets + '/' + url);
+
+  var pathname = folder + '/' + url;
+    fs.readFile(pathname, function(err, file){
+      if(err){
+        console.log('cannot read file');
+        exports.send404(resp);
+      } else {
+        // console.log("in readfile callback");
+        // console.log(" file is" + file);
+        resp.writeHead(statusCode, exports.headers);
+        // resp.write(file);
+        resp.end(file);
+      }
+    });
+
+};
 // As you progress, keep thinking about what helper functions you can put here!

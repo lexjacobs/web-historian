@@ -25,16 +25,50 @@ exports.initialize = function(pathsObj){
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(){
+exports.readListOfUrls = function(callback){
+  console.log('in readListOfUrls');
+  // console.log('this = ',this);
+  // read sites.text
+  fs.readFile(this.paths.list, function(err, data){
+    if (err){
+      throw err;
+    } else {
+      // console.log("sites.txt to string = ", data.toString().split('\n'));
+      callback(data.toString().split('\n'));
+    }
+  });
 };
 
-exports.isUrlInList = function(){
+exports.isUrlInList = function(url, callback){
+  exports.readListOfUrls(function(sites){
+    sites.length = sites.length || 0;
+    for( var i = 0; i < sites.length; i++){
+      if( sites[i] === url){
+        callback( true);
+        return;
+      }
+    }
+    callback(false);
+  });
+
 };
 
-exports.addUrlToList = function(){
+exports.addUrlToList = function(url){
+  fs.writeFile(exports.paths.list, url+"\n", {flag: 'a+'}, function(err){
+    if(err) throw err;
+  });
 };
 
-exports.isURLArchived = function(){
+exports.isUrlArchived = function(url,callback){
+  fs.stat(exports.paths.archivedSites +"/"+ url,function(err){
+    if(err){
+      // console.log("url not archived");
+      callback(false);
+    }else{
+      // console.log("url is archived");
+      callback(true);
+    }
+  });
 };
 
 exports.downloadUrls = function(){
